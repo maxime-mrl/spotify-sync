@@ -8,9 +8,9 @@ from nextcloud import sync_audio
 
 def main():
   # 1- Download songs from Spotify
-  download_songs()
+  # download_songs()
   # 2- Sync downloaded songs to Nextcloud
-  sync_audio() # can throw too many requests error sometimes
+  # sync_audio() # can throw too many requests error sometimes
   # 3- Sync downloaded songs to Subsonic
   subsonic = SubsonicClient(
     os.getenv('SUBSONIC_SERVER'),
@@ -22,7 +22,7 @@ def main():
     print("Could not connect to Subsonic server")
     return
   # initiate subsonic scan
-  subsonic.scan_library()
+  # subsonic.scan_library()
   # get all songs
   songs = subsonic.get_all_songs()
   # sync the playlist
@@ -36,8 +36,11 @@ def main():
           for song in songs:
             if song['title'] == track:
               to_add.append(song["id"])
-        playlist_id = subsonic.get_playlist_id(list["name"])
-        print(subsonic.update_playlist(playlist_id, to_add))
+        playlist = subsonic.get_playlist(list["name"])
+        for song in playlist['entry']:
+          if song['id'] in to_add:
+            to_add.remove(song['id'])
+        print(subsonic.update_playlist(playlist["id"], to_add))
 
 main()
   

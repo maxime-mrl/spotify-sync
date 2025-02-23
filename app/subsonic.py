@@ -53,20 +53,22 @@ class SubsonicClient:
     })["subsonic-response"]["searchResult3"]["song"]
     return songs
   
-  def get_playlist_id(self, playlist_name):
+  def get_playlist(self, playlist_name):
     """Get playlist ID by name"""
     playlists = self._make_request('getPlaylists')['subsonic-response']['playlists']['playlist']
     for playlist in playlists:
       if playlist['name'] == playlist_name:
-        return playlist['id']
+        return self._make_request('getPlaylist', {
+          'id': playlist['id']
+        })["subsonic-response"]["playlist"]
     return self.create_playlist(playlist_name)
   
   def create_playlist(self, playlist_name):
     """Create a new playlist"""
-    playlist_id = self._make_request('createPlaylist', {
+    playlist = self._make_request('createPlaylist', {
       'name': playlist_name
-    })['subsonic-response']['playlist']['id']
-    return playlist_id
+    })['subsonic-response']['playlist']
+    return playlist
   
   def update_playlist(self, playlist_id, song_ids):
     """Update a playlist with a list of song IDs"""
@@ -75,7 +77,6 @@ class SubsonicClient:
       'playlistId': playlist_id,
       'songIdToAdd': song_ids
     })
-    print(response)
     return response['subsonic-response']['status'] == 'ok'
   
   def scan_library(self):
@@ -84,7 +85,9 @@ class SubsonicClient:
     # Start scan if not already scanning
     status = self._make_request('getScanStatus')['subsonic-response']['scanStatus']
     if not status['scanning']:
-      self._make_request('startScan')
+      print("Starting scan...")
+      print(self._make_request('scan')['subsonic-response'])
+
     elapsed = 0
     # Wait until scan is complete
     while elapsed < 60: # max 60 seconds of scanning time

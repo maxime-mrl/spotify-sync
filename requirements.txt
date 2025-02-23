@@ -2,3 +2,4 @@ python-dotenv
 spotdl
 spotipy
 py-sonic
+owncloud
