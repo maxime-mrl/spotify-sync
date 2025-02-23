@@ -1,4 +1,6 @@
 import os
+import re
+import subprocess
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 
@@ -17,16 +19,27 @@ sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
 # Retrieve current user's playlists
 playlists = sp.current_user_playlists()
 
-print(playlists)
+# output folder
+if not os.path.exists('downloads'):
+  os.mkdir('downloads')
+os.chdir('downloads')
 
+# Loop through each playlist and download them
 for playlist in playlists['items']:
-    print(f"Playlist Name: {playlist['name']}")
-    print(f"Description: {playlist.get('description', 'No description')}")
+    playlist_name = playlist['name']
+    playlist_url = playlist['external_urls']['spotify']
+    print(f"Downloading playlist: {playlist_name}")
+    # create folder for each playlists
+    playlist_name = re.sub(r'[\\/*?:"<>|]', '', playlist_name)
+    playlist_name = re.sub(r'\s+', '_', playlist_name)
+    if not os.path.exists(playlist_name):
+      os.mkdir(playlist_name)
+    os.chdir(playlist_name)
     
-    # # Retrieve the tracks for this playlist
-    # tracks = sp.playlist_tracks(playlist['id'])
-    # print("Songs:")
-    # for item in tracks['items']:
-    #     track = item['track']
-    #     print(f" - {track['name']} by {', '.join(artist['name'] for artist in track['artists'])}")
-    # print("\n" + "-"*40 + "\n")
+    # Run spotdl to download the playlist
+    command = f'spotdl {playlist_url}'
+    subprocess.run(command, shell=True)
+    # go back to downloads folder
+    os.chdir('..')
+
+print("All playlists downloaded!")
