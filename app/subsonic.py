@@ -7,6 +7,7 @@ import json
 from urllib.parse import urljoin
 
 from dotenv import load_dotenv
+import time
 
 # Load environment variables from .env file
 load_dotenv()
@@ -76,6 +77,24 @@ class SubsonicClient:
     })
     print(response)
     return response['subsonic-response']['status'] == 'ok'
+  
+  def scan_library(self):
+    """Scan the library for new files and wait until scanning is complete"""
+    
+    # Start scan if not already scanning
+    status = self._make_request('getScanStatus')['subsonic-response']['scanStatus']
+    if not status['scanning']:
+      self._make_request('startScan')
+    elapsed = 0
+    # Wait until scan is complete
+    while elapsed < 60: # max 60 seconds of scanning time
+      elapsed += 1
+      status = self._make_request('getScanStatus')['subsonic-response']['scanStatus']
+      if not status['scanning']:
+        return True
+      time.sleep(1)  # Wait 1 second before checking again
+    
+    return False
 
 # testing da shit
 if __name__ == "__main__":
@@ -86,25 +105,25 @@ if __name__ == "__main__":
     PASSWORD = os.getenv('SUBSONIC_PASS')
 
     # Create client instance
-    client = SubsonicClient(SERVER_URL, USERNAME, PASSWORD)
+    client = SubsonicClient(os.getenv('SUBSONIC_SERVER'), os.getenv('SUBSONIC_USER'), os.getenv('SUBSONIC_PASS'))
 
     # Test connection
     if client.ping():
         print("Successfully connected to Subsonic server")
-
+        print("iniate scan")
+        print(client.scan_library())
         # Get all songs
         songs = client.get_all_songs()
         
         # Update playlist with song in json file
-        with open("./downloads/test-playlist.json", "r") as f:
-          d = json.load(f)
-          to_add = []
-          print(len(d["tracks"]))
-          for track in d["tracks"]:
-            for song in songs:
-              if song['title'] == track["name"]:
-                to_add.append(song["id"])
-          playlist_id = client.get_playlist_id(d["name"])
-          print(client.update_playlist(playlist_id, to_add))
+        # with open("./downloads/test-playlist.json", "r") as f:
+        #   d = json.load(f)
+        #   to_add = []
+        #   for track in d["tracks"]:
+        #     for song in songs:
+        #       if song['title'] == track:
+        #         to_add.append(song["id"])
+        #   playlist_id = client.get_playlist_id(d["name"])
+        #   print(client.update_playlist(playlist_id, to_add))
     else:
         print("Failed to connect to Subsonic server")
