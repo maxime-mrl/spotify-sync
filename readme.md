@@ -1,4 +1,4 @@
-# Spotify playlist sync
+# Subsonic playlist sync
 
 This is a simple script that syncs your Spotify playlists with a subsonic capable music hosting platform.
 
